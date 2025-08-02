@@ -1,5 +1,5 @@
-from machine import Pin, time_pulse_us
-import utime
+from machine import Pin, time_pulse_us # type: ignore
+import utime # type: ignore
 
 print("Hello, ESP32!")
 
@@ -50,14 +50,29 @@ def imprimir_estado():  # Funcion para ver por la terminal si la bomba esta pren
     else:
         print("La bomba esta apagada")
 
+def medir_distancia_filtrada(n=5):
+    mediciones = []
+    for _ in range(n):
+        d = medir_distancia()
+        mediciones.append(d)
+        utime.sleep_ms(50)
+    mediciones.sort()
+    mediciones_filtradas = mediciones[1:-1]
+    promedio = sum(mediciones_filtradas)/len(mediciones_filtradas)
+    return promedio
+
+
+
 ##########################################
 #    Comienzo del programa principal     #
 ##########################################
 
 while True:
-    distancia_sensor = medir_distancia()
-    print(f"El tanque esta al {100-(distancia_sensor * 100 / Largo_tanque)}%")
+    distancia_sensor = medir_distancia_filtrada()
+    nivel_agua = round(100-(distancia_sensor * 100 / Largo_tanque))
+    print(f"El tanque esta al {nivel_agua}%")
     controlar_bomba(distancia_sensor)
     imprimir_estado()
+    led_bomba.value(1 if estado_de_la_bomba else 0)
     utime.sleep(0.5)
     print("\033[2J\033[H")
